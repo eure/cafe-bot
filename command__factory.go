@@ -13,6 +13,8 @@ func CreateCommand(d CommandData) Command {
 	case containsMention(d.Clients, d.Text):
 		// メンションを含む場合
 		return createCommandForMention(d)
+	case isBarista(d.User):
+		return newCommandBaristaSay(d)
 	case containsOrder(d.Text):
 		// メンション以外で注文情報を含む場合
 		return newCommandFreewordOrder(d)
@@ -81,7 +83,7 @@ func (c *Command) Add(t task) {
 func (c Command) Exec() {
 	for _, task := range c.tasks {
 		err := task.run()
-		if err != nil {
+		if err != nil && c.logger != nil {
 			c.logger.Printf("[ERROR] task=[%s], error=%s", task.getName(), err.Error())
 			return
 		}

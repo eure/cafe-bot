@@ -93,8 +93,9 @@ SLACK_BOT_TOKEN=xoxb-0000... GOOGLE_HOME_HOST=192.168.0.1 ./cafebot
 ├── task.go
 ├── task_xxx.go
 
-# Cafe menu
-├── cafe_menu.go
+# Cafe
+├── cafe_menu.go    # menu
+├── cafe_order.go   # order history
 ```
 
 ## How to create other commands?
