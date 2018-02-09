@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/evalphobia/google-home-client-go/googlehome"
 	"github.com/nlopes/slack"
@@ -13,12 +14,14 @@ type ClientManager struct {
 	logger *log.Logger
 
 	//Slackクライアント
+	slackClose   chan struct{}
 	slackClient  *slack.Client
 	slackRTM     *slack.RTM
 	slackBotID   string
 	slackBotName string
 
 	// Google Homeクライアント
+	castClose  chan struct{}
 	castClient *googlehome.Client
 }
 
@@ -41,6 +44,8 @@ func newClientManagerWithSlack(conf Config) (ClientManager, error) {
 		slackBotID:   resp.UserID,
 		slackBotName: resp.User,
 		logger:       logger,
+		slackClose:   make(chan struct{}, 1),
+		castClose:    make(chan struct{}, 1),
 	}, nil
 }
 
@@ -54,7 +59,6 @@ func (c *ClientManager) SetCastClient(config ...googlehome.Config) error {
 		// 空の場合はデフォルトコンフィグを使う
 		conf = googlehome.Config{}
 	}
-
 	castClient, err := googlehome.NewClientWithConfig(conf)
 	if err != nil {
 		return err
@@ -62,6 +66,49 @@ func (c *ClientManager) SetCastClient(config ...googlehome.Config) error {
 	castClient.SetLang("ja")
 	c.castClient = castClient
 	return nil
+}
+
+// 長期間起動時に接続が切れてしまうため
+func (c *ClientManager) KeepAlive() {
+	go c.keepAliveSlack()
+	go c.keepAliveCast()
+}
+
+func (c *ClientManager) keepAliveSlack() {
+	cli := c.slackRTM
+	ticker := time.NewTicker(time.Second * 300)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			// send empty message.
+			cli.SendMessage(cli.NewTypingMessage(""))
+		case <-c.slackClose:
+			cli.Disconnect()
+			return
+		}
+	}
+}
+
+func (c *ClientManager) keepAliveCast() {
+	ticker := time.NewTicker(time.Second * 300)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			c.SetCastClient()
+		case <-c.castClose:
+			c.castClient.Close()
+			return
+		}
+	}
+}
+
+func (c *ClientManager) CloseAll() {
+	c.castClose <- struct{}{}
+	c.slackClose <- struct{}{}
 }
 
 // ログを記録する.

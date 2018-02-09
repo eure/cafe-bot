@@ -56,8 +56,8 @@ func createCommandForMention(d CommandData) Command {
 		return newCommandShowStatus(d)
 	case "debug-say":
 		return newCommandDebugSay(d)
-	case "reconnect":
-		return newCommandReconnect(d)
+	case "reload":
+		return newCommandReload(d)
 	default:
 		return newCommandOrder(d)
 	}

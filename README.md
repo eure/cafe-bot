@@ -72,7 +72,7 @@ SLACK_BOT_TOKEN=xoxb-0000... GOOGLE_HOME_HOST=192.168.0.1 ./cafebot
 ├── main.go
 
 # SlackBot Daemon and Config
-├── daemon.go
+├── bot.go
 ├── config.go
 
 # Third party clients. (Slack, Google Home)
@@ -113,5 +113,5 @@ Create new command and add it on `CreateCommand` function.
 - Send Slack message
 - Send Slack message as a thread reply
 - Speak something on Google Home
-- Reconnect to Google Home
+- Reload SlackBot
 - Change flags of SlackBot

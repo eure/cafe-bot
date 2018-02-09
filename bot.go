@@ -2,23 +2,25 @@ package main
 
 import (
 	"errors"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/nlopes/slack"
 )
 
 // エラーコード
 const (
-	errorCodeGeneral     = 2
-	errorCodeInvalidAuth = 3
+	errorCodeNone        = 0
+	errorCodeExit        = 2
+	errorCodeGeneral     = 3
+	errorCodeInvalidAuth = 4
 )
 
 // Slack Bot用の構造体
 type SlackBot struct {
 	//各種クライアント
 	clients ClientManager
-	// client *slack.Client
-	// rtm    *slack.RTM
-	// castClient *notifier.Client
 
 	// ボット自身のSlack情報
 	botID   string
@@ -31,6 +33,9 @@ type SlackBot struct {
 	isSpeech bool
 	status   bool
 	orderLog []string
+
+	closeChan  chan int
+	reloadChan chan struct{}
 }
 
 // 初期化済みSlackBotを返却する.
@@ -51,15 +56,20 @@ func NewSlackBotWithConfig(conf Config) (*SlackBot, error) {
 		// return nil, err
 	}
 
-	return &SlackBot{
-		clients:  cli,
-		botID:    cli.slackBotID,
-		botName:  cli.slackBotID,
-		users:    make(map[string]string),
-		isDebug:  conf.IsDebug(),
-		isSpeech: conf.IsSpeech(),
-		status:   true,
-	}, nil
+	bot := &SlackBot{
+		clients:    cli,
+		botID:      cli.slackBotID,
+		botName:    cli.slackBotID,
+		users:      make(map[string]string),
+		isDebug:    conf.IsDebug(),
+		isSpeech:   conf.IsSpeech(),
+		status:     true,
+		closeChan:  make(chan int, 1),
+		reloadChan: make(chan struct{}, 1),
+	}
+	go bot.catchSignal()
+
+	return bot, nil
 }
 
 // デバッグフラグ（ログ用）
@@ -82,41 +92,33 @@ func (b *SlackBot) runRTM() int {
 	rtm := b.clients.slackRTM
 	go rtm.ManageConnection()
 
-	for msg := range rtm.IncomingEvents {
-		switch ev := msg.Data.(type) {
-		case *slack.MessageEvent:
-			// ユーザーの投稿に反応するイベント
-			b.processMessage(ev)
-		case *slack.HelloEvent:
-			// b.Logging("HelloEvent", "%v", ev)
-		case *slack.ConnectedEvent:
-			// b.Logging("ConnectedEvent", "info=%v, counter=%d", ev.Info, ev.ConnectionCount)
-		case *slack.LatencyReport:
-			// b.LogDebug("LatencyReport", "Current latency: %v", ev.Value)
-		case *slack.RTMError:
-			b.Logging("RTMError", "Error:%s", ev.Error())
-		case *slack.ConnectionErrorEvent:
-			if ev.Error() == "not_authed" && ev.Attempt > 2 {
-				b.Logging("ConnectionErrorEvent", "Auth Error")
+	for {
+		select {
+		case errCode := <-b.closeChan:
+			return errCode
+		case <-b.reloadChan:
+			b.exitNoError()
+			return errorCodeNone
+		case msg := <-rtm.IncomingEvents:
+			switch ev := msg.Data.(type) {
+			case *slack.MessageEvent:
+				// ユーザーの投稿に反応するイベント
+				b.processMessage(ev)
+			case *slack.DisconnectedEvent:
+				b.Logging("DisconnectedEvent", "intentional=%t", ev.Intentional)
+			case *slack.LatencyReport:
+				// b.LogDebug("LatencyReport", "Current latency: %v", ev.Value)
+			case *slack.RTMError:
+				b.Logging("RTMError", "Error:%s", ev.Error())
+			case *slack.ConnectionErrorEvent:
+				if ev.Error() == "not_authed" && ev.Attempt > 2 {
+					b.Logging("ConnectionErrorEvent", "Auth Error")
+					return errorCodeInvalidAuth
+				}
+			case *slack.InvalidAuthEvent:
+				b.Logging("InvalidAuthEvent", "Invalid credentials")
 				return errorCodeInvalidAuth
 			}
-		case *slack.InvalidAuthEvent:
-			b.Logging("InvalidAuthEvent", "Invalid credentials")
-			return errorCodeInvalidAuth
-		case *slack.FileCommentAddedEvent,
-			*slack.FilePublicEvent,
-			*slack.FileSharedEvent,
-			*slack.FileChangeEvent,
-			*slack.UserChangeEvent,
-			*slack.UserTypingEvent,
-			*slack.BotAddedEvent,
-			*slack.ReactionAddedEvent,
-			*slack.EmojiChangedEvent,
-			*slack.ConnectingEvent,
-			*slack.AckMessage:
-			// 何もしない
-		default:
-			b.LogDebug("Unexpected", "Type=%T, data=%+v", ev, msg.Data)
 		}
 	}
 	return errorCodeGeneral
@@ -192,4 +194,46 @@ func (b SlackBot) LogDebug(typ, msg string, v ...interface{}) {
 	if b.isDebug {
 		b.clients.Logging(typ, msg, v...)
 	}
+}
+
+// OSシグナルを処理する.
+func (b SlackBot) catchSignal() {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
+
+	for {
+		s := <-ch
+		switch s {
+		case syscall.SIGHUP:
+			b.Logging("catchSignal", "syscall.SIGHUP")
+			b.reloadChan <- struct{}{}
+			return
+		case syscall.SIGINT:
+			b.Logging("catchSignal", "syscall.SIGINT")
+			b.exit()
+			return
+		case syscall.SIGTERM:
+			b.Logging("catchSignal", "syscall.SIGTERM")
+			b.exit()
+			return
+		case syscall.SIGQUIT:
+			b.Logging("catchSignal", "syscall.SIGQUIT")
+			b.exit()
+			return
+		}
+	}
+}
+
+func (b SlackBot) exit() {
+	b.clients.CloseAll()
+	b.closeChan <- errorCodeExit
+}
+
+func (b SlackBot) exitNoError() {
+	b.clients.CloseAll()
+	b.closeChan <- errorCodeNone
 }
