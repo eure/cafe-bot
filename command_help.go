@@ -19,7 +19,7 @@ func getUsage() string {
 /* コマンド */
 help    // ヘルプ表示
 menu    // メニュー表示
-
+history // 注文履歴表示
 
 /* オーダー */
 <ドリンク名> <hot/ice>  // hot or iceはドリンクによっては省略可
@@ -30,7 +30,7 @@ mute      // 音声をオフに変更
 speech    // 音声をオンに変更
 on        // Slackでの反応をオンに変更
 off       // Slackでの反応をオフに変更
-reconnect // GoogleHomeへ再接続する
+reload    // ボットをリロードする
 status    // ステータスを表示する
 `
 }

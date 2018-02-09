@@ -8,10 +8,11 @@ import (
 
 // 設定値用の構造体
 type Config struct {
-	Token  string
-	Logger *log.Logger
-	Debug  bool
-	Speech bool
+	Token      string
+	Logger     *log.Logger
+	Debug      bool
+	Speech     bool
+	MaxHistory int
 }
 
 // Slackトークンを取得する.
@@ -20,6 +21,24 @@ func (c Config) GetToken() string {
 		return c.Token
 	}
 	return getToken()
+}
+
+// Slackトークン用の環境変数リスト
+var envTokens = []string{
+	"SLACK_RTM_TOKEN",
+	"SLACK_BOT_TOKEN",
+	"SLACK_TOKEN",
+}
+
+// Slackトークンを取得する.
+func getToken() string {
+	for _, envName := range envTokens {
+		token := os.Getenv(envName)
+		if token != "" {
+			return token
+		}
+	}
+	return ""
 }
 
 // ロガーを取得する.
@@ -51,20 +70,12 @@ func (c Config) IsSpeech() bool {
 	return b
 }
 
-// Slackトークン用の環境変数リスト
-var envTokens = []string{
-	"SLACK_RTM_TOKEN",
-	"SLACK_BOT_TOKEN",
-	"SLACK_TOKEN",
-}
-
-// Slackトークンを取得する.
-func getToken() string {
-	for _, envName := range envTokens {
-		token := os.Getenv(envName)
-		if token != "" {
-			return token
-		}
+// 注文履歴の最大値を取得する..
+func (c Config) GetMaxHistory() int {
+	if c.MaxHistory > 0 {
+		return c.MaxHistory
 	}
-	return ""
+
+	const maxHistory = 100
+	return maxHistory
 }

@@ -26,6 +26,7 @@ func newCommandOrder(d CommandData) Command {
 
 	// ホット or アイスの片方のみしか存在しないメニューの場合
 	if !hasBothHeat(item) {
+		c.Add(newBotAddHistoryTask(d.Bot, d.User, item))
 		text := fmt.Sprintf("%sさんが「%s」が欲しいって言っています。", d.User, item)
 		c.Add(newCastPlayTask(d.Clients.castClient, text))
 		c.Add(newSlackReplyThreadTask(d.Clients.slackRTM, d.SlackChannel, text, d.ThreadTimestamp))
@@ -44,6 +45,7 @@ func newCommandOrder(d CommandData) Command {
 		return c
 	}
 
+	c.Add(newBotAddHistoryTask(d.Bot, d.User, fmt.Sprintf("%s (%s)", item, heat)))
 	text := fmt.Sprintf("%sさんが「%sの%s」が欲しいって言っています。", d.User, heat, item)
 	c.Add(newCastPlayTask(d.Clients.castClient, text))
 	c.Add(newSlackReplyThreadTask(d.Clients.slackRTM, d.SlackChannel, text, d.ThreadTimestamp))

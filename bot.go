@@ -32,7 +32,9 @@ type SlackBot struct {
 	isDebug  bool
 	isSpeech bool
 	status   bool
-	orderLog []string
+
+	maxOrderHistory int
+	orderHistory    []Order
 
 	closeChan  chan int
 	reloadChan chan struct{}
@@ -57,15 +59,16 @@ func NewSlackBotWithConfig(conf Config) (*SlackBot, error) {
 	}
 
 	bot := &SlackBot{
-		clients:    cli,
-		botID:      cli.slackBotID,
-		botName:    cli.slackBotID,
-		users:      make(map[string]string),
-		isDebug:    conf.IsDebug(),
-		isSpeech:   conf.IsSpeech(),
-		status:     true,
-		closeChan:  make(chan int, 1),
-		reloadChan: make(chan struct{}, 1),
+		clients:         cli,
+		botID:           cli.slackBotID,
+		botName:         cli.slackBotID,
+		users:           make(map[string]string),
+		isDebug:         conf.IsDebug(),
+		isSpeech:        conf.IsSpeech(),
+		status:          true,
+		closeChan:       make(chan int, 1),
+		reloadChan:      make(chan struct{}, 1),
+		maxOrderHistory: conf.GetMaxHistory(),
 	}
 	go bot.catchSignal()
 
@@ -182,6 +185,39 @@ func (b *SlackBot) fetchUser(user string) error {
 
 	b.users[user] = resp.Name
 	return nil
+}
+
+// .注文履歴を追加する.
+func (b *SlackBot) getOrderHistory(page int) (orders []Order, start, last int) {
+	const showSize = 10
+	pageFirst := (page) * showSize
+	pageLast := (page + 1) * showSize
+
+	size := len(b.orderHistory)
+	if size <= pageFirst {
+		return nil, 0, 0
+	}
+
+	if size < pageLast {
+		pageLast = size
+	}
+	return b.orderHistory[pageFirst:pageLast], pageFirst + 1, pageLast
+}
+
+func (b *SlackBot) getOrderHistorySize() int {
+	return len(b.orderHistory)
+}
+
+// .注文履歴を追加する.
+func (b *SlackBot) addOrderHistory(o Order) {
+	max := b.maxOrderHistory
+	if len(b.orderHistory) < max {
+		b.orderHistory = append([]Order{o}, b.orderHistory...)
+		return
+	}
+
+	b.orderHistory = append([]Order{o}, b.orderHistory[0:max-1]...)
+	return
 }
 
 // ログを記録する.

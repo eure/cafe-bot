@@ -40,6 +40,8 @@ func createCommandForMention(d CommandData) Command {
 		return newCommandHelp(d)
 	case "menu":
 		return newCommandMenu(d)
+	case "history":
+		return newCommandHistory(d)
 	case "mute":
 		return newCommandSpeechOff(d)
 	case "speech":
