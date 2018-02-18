@@ -48,6 +48,8 @@ func createCommandForMention(d CommandData) Command {
 		return newCommandSpeechOff(d)
 	case "speech":
 		return newCommandSpeechOn(d)
+	case "volume":
+		return newCommandVolume(d)
 	case "on":
 		return newCommandStatusOn(d)
 	case "off":

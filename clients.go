@@ -21,7 +21,6 @@ type ClientManager struct {
 	slackBotName string
 
 	// Google Homeクライアント
-	castClose  chan struct{}
 	castClient *googlehome.Client
 }
 
@@ -45,7 +44,6 @@ func newClientManagerWithSlack(conf Config) (ClientManager, error) {
 		slackBotName: resp.User,
 		logger:       logger,
 		slackClose:   make(chan struct{}, 1),
-		castClose:    make(chan struct{}, 1),
 	}, nil
 }
 
@@ -71,7 +69,6 @@ func (c *ClientManager) SetCastClient(config ...googlehome.Config) error {
 // 長期間起動時に接続が切れてしまうため
 func (c *ClientManager) KeepAlive() {
 	go c.keepAliveSlack()
-	go c.keepAliveCast()
 }
 
 func (c *ClientManager) keepAliveSlack() {
@@ -91,23 +88,7 @@ func (c *ClientManager) keepAliveSlack() {
 	}
 }
 
-func (c *ClientManager) keepAliveCast() {
-	ticker := time.NewTicker(time.Second * 300)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			c.SetCastClient()
-		case <-c.castClose:
-			c.castClient.Close()
-			return
-		}
-	}
-}
-
 func (c *ClientManager) CloseAll() {
-	c.castClose <- struct{}{}
 	c.slackClose <- struct{}{}
 }
 
