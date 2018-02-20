@@ -28,6 +28,5 @@ func (t castPlayTask) run() error {
 		return errors.New("Google Homeクライアントが設定されていません")
 	}
 
-	t.client.Notify(t.text)
-	return nil
+	return t.client.Notify(t.text)
 }
