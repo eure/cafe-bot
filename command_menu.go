@@ -7,7 +7,7 @@ import "fmt"
 func newCommandMenu(d CommandData) Command {
 	c := Command{}
 
-	text := fmt.Sprintf("```%s```", getAllMenu())
+	text := fmt.Sprintf("```%s\n--------\n* グランデサイズあり```", getAllMenu())
 	task := newSlackSendChannleTask(d.Clients.slackRTM, d.SlackChannel, text)
 	c.Add(task)
 	return c

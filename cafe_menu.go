@@ -20,6 +20,7 @@ const (
 	menuCaramel   = "キャラメルラテ"
 	menuEspresso  = "エスプレッソ"
 	menuAmericano = "アメリカーノ"
+	menuMatcha    = "抹茶ラテ"
 )
 
 // 実際のメニューとユーザー入力メニューのマッピング
@@ -83,6 +84,11 @@ var menuMap = map[string]string{
 	"america":     menuAmericano,
 	"americano":   menuAmericano,
 	"american":    menuAmericano,
+	menuMatcha:    menuMatcha,
+	"抹茶":          menuMatcha,
+	"茶":           menuMatcha,
+	"matcha":      menuMatcha,
+	"macha":       menuMatcha,
 }
 
 // ホットメニュー
@@ -97,6 +103,7 @@ var hotMap = map[string]struct{}{
 	menuCaramel:   {},
 	menuEspresso:  {},
 	menuAmericano: {},
+	menuMatcha:    {},
 }
 
 // アイスメニュー
@@ -109,6 +116,16 @@ var iceMap = map[string]struct{}{
 	menuCaramel: {},
 	menuMelon:   {},
 	menuGinger:  {},
+	menuMatcha:  {},
+}
+
+// グランデサイズメニュー
+var largeSizeMap = map[string]struct{}{
+	menuCoffee: {},
+	menuLatte:  {},
+	menuMatcha: {},
+	menuMelon:  {},
+	menuSoy:    {},
 }
 
 var (
@@ -121,22 +138,29 @@ var (
 func init() {
 	// メニューの重複防止用キャッシュ
 	itemMap := make(map[string]struct{})
-	for _, v := range menuMap {
-		if _, ok := itemMap[v]; ok {
+	for _, name := range menuMap {
+		if _, ok := itemMap[name]; ok {
 			continue
 		}
 
-		itemMap[v] = struct{}{}
+		itemMap[name] = struct{}{}
+
+		// グランデサイズ対応
+		menuName := name
+		if _, ok := largeSizeMap[name]; ok {
+			menuName = fmt.Sprintf("* %s", name)
+		}
+
 		// ホットとアイスの両方が存在するメニューを判定
-		if _, ok := hotMap[v]; ok {
-			if _, ok := iceMap[v]; ok {
-				menus = append(menus, fmt.Sprintf("%s (hot)", v))
-				menus = append(menus, fmt.Sprintf("%s (ice)", v))
-				bothHeatMap[v] = struct{}{}
+		if _, ok := hotMap[name]; ok {
+			if _, ok := iceMap[name]; ok {
+				menus = append(menus, fmt.Sprintf("%s (hot)", menuName))
+				menus = append(menus, fmt.Sprintf("%s (ice)", menuName))
+				bothHeatMap[name] = struct{}{}
 				continue
 			}
 		}
-		menus = append(menus, v)
+		menus = append(menus, menuName)
 	}
 	sort.Strings(menus)
 }
