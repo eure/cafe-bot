@@ -129,7 +129,10 @@ func (b *SlackBot) runRTM() int {
 
 // ユーザーからの投稿を内容に応じて処理する.
 func (b *SlackBot) processMessage(ev *slack.MessageEvent) {
-	if ev.Text == "" {
+	switch {
+	case ev.Text == "",
+		ev.Hidden,
+		b.botID == ev.Msg.User:
 		return
 	}
 
