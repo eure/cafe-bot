@@ -25,12 +25,13 @@ type ClientManager struct {
 }
 
 func newClientManagerWithSlack(conf Config) (ClientManager, error) {
-	cli := slack.New(conf.GetToken())
-
+	var opts []slack.Option
 	logger := conf.GetLogger()
 	if logger != nil {
-		slack.SetLogger(conf.GetLogger())
+		opts = append(opts, slack.OptionLog(conf.GetLogger()))
 	}
+
+	cli := slack.New(conf.GetToken(), opts...)
 
 	// Tokenを用いたSlackとの疎通テスト
 	resp, err := cli.AuthTest()
