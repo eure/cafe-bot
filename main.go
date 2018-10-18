@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 )
 
 // エントリーポイント
@@ -13,14 +14,24 @@ func main() {
 		if errCode != errorCodeNone {
 			os.Exit(errCode)
 		}
+		time.Sleep(time.Second * 5)
+		fmt.Printf("run again...\n")
 	}
 }
 
-func run() int {
+func run() (errCode int) {
 	bot, err := NewSlackBot()
 	if err != nil {
 		panic(err)
 	}
+
+	defer func() {
+		if err := recover(); err != nil {
+			bot.Logging("PANIC", fmt.Sprintf("%v", err))
+			bot.exit()
+			errCode = errorCodeNone
+		}
+	}()
 
 	return bot.runRTM()
 }

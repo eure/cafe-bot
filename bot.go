@@ -38,6 +38,7 @@ type SlackBot struct {
 
 	closeChan  chan int
 	reloadChan chan struct{}
+	signal     chan os.Signal
 }
 
 // 初期化済みSlackBotを返却する.
@@ -68,6 +69,7 @@ func NewSlackBotWithConfig(conf Config) (*SlackBot, error) {
 		status:          true,
 		closeChan:       make(chan int, 1),
 		reloadChan:      make(chan struct{}, 1),
+		signal:          make(chan os.Signal, 1),
 		maxOrderHistory: conf.GetMaxHistory(),
 	}
 	go bot.catchSignal()
@@ -237,15 +239,14 @@ func (b SlackBot) LogDebug(typ, msg string, v ...interface{}) {
 
 // OSシグナルを処理する.
 func (b SlackBot) catchSignal() {
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch,
+	signal.Notify(b.signal,
 		syscall.SIGHUP,
 		syscall.SIGINT,
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
 
 	for {
-		s := <-ch
+		s := <-b.signal
 		switch s {
 		case syscall.SIGHUP:
 			b.Logging("catchSignal", "syscall.SIGHUP")
@@ -268,11 +269,15 @@ func (b SlackBot) catchSignal() {
 }
 
 func (b SlackBot) exit() {
+	b.Logging("exit", "closing...")
 	b.clients.CloseAll()
+	signal.Stop(b.signal)
 	b.closeChan <- errorCodeExit
 }
 
 func (b SlackBot) exitNoError() {
+	b.Logging("exitNoError", "closing...")
 	b.clients.CloseAll()
+	signal.Stop(b.signal)
 	b.closeChan <- errorCodeNone
 }
