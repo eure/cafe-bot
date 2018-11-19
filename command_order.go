@@ -28,7 +28,7 @@ func newCommandOrder(d CommandData) Command {
 	if !hasBothHeat(item) {
 		c.Add(newBotAddHistoryTask(d.Bot, d.User, item))
 		text := fmt.Sprintf("%sさんが「%s」が欲しいって言っています。", d.User, item)
-		c.Add(newCastPlayTask(d.Clients.castClient, text))
+		c.Add(newCastPlayTask(d.Clients.castClient, text, d.Bot.isSpeech))
 		c.Add(newSlackReplyThreadTask(d.Clients.slackRTM, d.SlackChannel, text, d.ThreadTimestamp))
 		return c
 	}
@@ -47,7 +47,7 @@ func newCommandOrder(d CommandData) Command {
 
 	c.Add(newBotAddHistoryTask(d.Bot, d.User, fmt.Sprintf("%s (%s)", item, heat)))
 	text := fmt.Sprintf("%sさんが「%sの%s」が欲しいって言っています。", d.User, heat, item)
-	c.Add(newCastPlayTask(d.Clients.castClient, text))
+	c.Add(newCastPlayTask(d.Clients.castClient, text, d.Bot.isSpeech))
 	c.Add(newSlackReplyThreadTask(d.Clients.slackRTM, d.SlackChannel, text, d.ThreadTimestamp))
 	return c
 }

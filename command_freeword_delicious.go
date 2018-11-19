@@ -22,7 +22,7 @@ func newCommandFreewordDelicious(d CommandData) Command {
 
 	item := words[1]
 	text := fmt.Sprintf("%sさんが「%s」を美味しいって言っています。", d.User, item)
-	c.Add(newCastPlayTask(d.Clients.castClient, text))
+	c.Add(newCastPlayTask(d.Clients.castClient, text, d.Bot.isSpeech))
 	c.Add(newSlackReplyThreadTask(d.Clients.slackRTM, d.SlackChannel, text, d.ThreadTimestamp))
 	return c
 }
