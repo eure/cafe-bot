@@ -9,7 +9,7 @@ func newCommandDebugSay(d CommandData) Command {
 
 	text := getDebugWord(d.Text)
 
-	c.Add(newCastPlayTask(d.Clients.castClient, text))
+	c.Add(newCastPlayTask(d.Clients.castClient, text, d.Bot.isSpeech))
 	return c
 }
 

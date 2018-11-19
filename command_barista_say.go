@@ -17,7 +17,7 @@ func newCommandBaristaSay(d CommandData) Command {
 		return emptyCommand
 	}
 
-	c.Add(newCastPlayTask(d.Clients.castClient, text))
+	c.Add(newCastPlayTask(d.Clients.castClient, text, d.Bot.isSpeech))
 	return c
 }
 

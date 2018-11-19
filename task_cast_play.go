@@ -8,14 +8,16 @@ import (
 
 // Google Homeで発話するタスク.
 type castPlayTask struct {
-	client *googlehome.Client
-	text   string
+	client  *googlehome.Client
+	text    string
+	enabled bool
 }
 
-func newCastPlayTask(client *googlehome.Client, text string) castPlayTask {
+func newCastPlayTask(client *googlehome.Client, text string, enabled bool) castPlayTask {
 	return castPlayTask{
-		client: client,
-		text:   text,
+		client:  client,
+		text:    text,
+		enabled: enabled,
 	}
 }
 

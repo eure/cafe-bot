@@ -24,7 +24,7 @@ func newCommandFreewordOrder(d CommandData) Command {
 	c.Add(newBotAddHistoryTask(d.Bot, d.User, item))
 
 	text := fmt.Sprintf("%sさんが「%s」を欲しいって言っています。", d.User, item)
-	c.Add(newCastPlayTask(d.Clients.castClient, text))
+	c.Add(newCastPlayTask(d.Clients.castClient, text, d.Bot.isSpeech))
 	c.Add(newSlackReplyThreadTask(d.Clients.slackRTM, d.SlackChannel, text, d.ThreadTimestamp))
 	return c
 }
