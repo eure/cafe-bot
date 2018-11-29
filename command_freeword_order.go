@@ -3,9 +3,27 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"strings"
 )
 
-var reOrder = regexp.MustCompile("(.*[^がを])(が|を)?(欲しい|ほしい|つくって|作って|頼む|たのむ|ください|下さい|のみたい|飲みたい|お願い)")
+var orderWords = []string{
+	"欲しい",
+	"ほしい",
+	"作って",
+	"つくって",
+	"頼む",
+	"たのむ",
+	"下さい",
+	"ください",
+	"飲みたい",
+	"のみたい",
+	"お願い",
+	"おねがい",
+	"please",
+	"ぷりーず",
+}
+
+var reOrder = regexp.MustCompile(fmt.Sprintf("(.*[^がを])(が|を)?(%s)", strings.Join(orderWords, "|")))
 
 // 自由に注文するコマンド.
 // GoogleHomeで注文を発話する.
@@ -15,7 +33,7 @@ func newCommandFreewordOrder(d CommandData) Command {
 		return emptyCommand
 	}
 
-	words := reOrder.FindStringSubmatch(d.Text)
+	words := reOrder.FindStringSubmatch(strings.ToLower(d.Text))
 	if len(words) != 4 {
 		return emptyCommand
 	}
