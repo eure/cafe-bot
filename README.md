@@ -1,7 +1,7 @@
-cafe-bot
+cafebot
 ----
 
-[![GoDoc][1]][2] [![License: MIT][3]][4] [![Release][5]][6] [![Build Status][7]][8] [![Codecov Coverage][11]][12] [![Go Report Card][13]][14] [![Downloads][15]][16]
+[![GoDoc][1]][2] [![License: MIT][3]][4] [![Release][5]][6] [![Build Status][7]][8] [![Co decov Coverage][11]][12] [![Go Report Card][13]][14] [![Code Climate][19]][20] [![BCH compliance][21]][22] [![Downloads][15]][16]
 
 [1]: https://godoc.org/github.com/eure/cafe-bot?status.svg
 [2]: https://godoc.org/github.com/eure/cafe-bot
@@ -21,6 +21,11 @@ cafe-bot
 [16]: https://github.com/eure/cafe-bot/releases
 [17]: https://img.shields.io/github/stars/eure/cafe-bot.svg
 [18]: https://github.com/eure/cafe-bot/stargazers
+[19]: https://codeclimate.com/github/eure/cafe-bot/badges/gpa.svg
+[20]: https://codeclimate.com/github/eure/cafe-bot
+[21]: https://bettercodehub.com/edge/badge/eure/cafe-bot?branch=master
+[22]: https://bettercodehub.com/
+
 
 
 Slack Bot for Archimedes Cafe @ eureka, Inc.
@@ -35,20 +40,19 @@ $ go get -u github.com/eure/cafe-bot
 # Build
 
 ```bash
-$ cd /path/to/cafe-bot
-$ go build -o cafebot
+$ make build
 ```
 
 for Raspberry Pi
 
 ```bash
-$ GOOS=linux GOARCH=arm GOARM=6 go build -o cafebot
+$ make build-arm6
 ```
 
 # Run
 
 ```bash
-SLACK_BOT_TOKEN=xoxb-0000... GOOGLE_HOME_HOST=192.168.0.1 ./cafebot
+SLACK_BOT_TOKEN=xoxb-0000... GOOGLE_HOME_HOST=192.168.0.1 GOOGLE_HOME_LANG=ja ./bin/cafebot
 ```
 
 ## Environment variables
@@ -58,61 +62,14 @@ SLACK_BOT_TOKEN=xoxb-0000... GOOGLE_HOME_HOST=192.168.0.1 ./cafebot
 | `SLACK_RTM_TOKEN` | [Slack Bot Token](https://slack.com/apps/A0F7YS25R-bots) |
 | `SLACK_BOT_TOKEN` | [Slack Bot Token](https://slack.com/apps/A0F7YS25R-bots) |
 | `SLACK_TOKEN` | [Slack Bot Token](https://slack.com/apps/A0F7YS25R-bots) |
-| `SLACK_BOT_SPEECH` | Flag for speech feature. Set [boolean like value](https://golang.org/pkg/strconv/#ParseBool). |
-| `SLACK_BOT_DEBUG` | Flag for debug logging. Set [boolean like value](https://golang.org/pkg/strconv/#ParseBool). |
+| `BOBO_DEBUG` | Flag for debug logging. Set [boolean like value](https://golang.org/pkg/strconv/#ParseBool). |
 | `GOOGLE_HOME_HOST` | Hostname or IP address of Google Home for speech feature. |
 | `GOOGLE_HOME_PORT` | Port number of Google Home. Default is `8009`. |
+| `GOOGLE_HOME_LANG` | Speaking language of Google Home. Default is `en`. |
+| `GOOGLE_HOME_ACCENT` | Speaking accent of Google Home. Default is `us`. |
 
-# Development
 
-## Directory Structure
+## Supported Commands
 
-```
-# Entry point
-├── main.go
-
-# SlackBot Daemon and Config
-├── bot.go
-├── config.go
-
-# Third party clients. (Slack, Google Home)
-├── clients.go
-
-# Helper methods for Command
-├── command__data.go
-├── command__factory.go
-├── command__helper.go
-
-# Original Commands
-├── command_xxx.go
-├── command_yyy.go
-├── command_zzz.go
-...
-
-# Tasks.
-├── task.go
-├── task_xxx.go
-
-# Cafe
-├── cafe_menu.go    # menu
-├── cafe_order.go   # order history
-```
-
-## How to create other commands?
-
-`Command` is composed of multiple `task`.
-Create new command and add it on `CreateCommand` function.
-
-1. Copy `command_xxx.go`
-
-2. Edit it for new command and adds existing (or new) task.
-
-3. Edit `CreateCommand` function on `command__factory.go`, and add new `case` for the new command.
-
-## Supported tasks
-
-- Send Slack message
-- Send Slack message as a thread reply
-- Speak something on Google Home
-- Reload SlackBot
-- Change flags of SlackBot
+- Order drink
+- Show order history

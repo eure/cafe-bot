@@ -1,9 +1,10 @@
-package main
+package cafebot
 
 import (
 	"fmt"
 	"sort"
 	"strings"
+	"unicode"
 )
 
 // メニュー一覧
@@ -211,4 +212,42 @@ func hasHeat(heat string) bool {
 func hasBothHeat(item string) bool {
 	_, ok := bothHeatMap[item]
 	return ok
+}
+
+// ひらがなからカタカナへの変換器
+var kanaConv = unicode.SpecialCase{
+	unicode.CaseRange{
+		Lo: 0x3041, // ぁ
+		Hi: 0x3093, // ん
+		Delta: [unicode.MaxCase]rune{
+			0x30a1 - 0x3041, // UpperCase でカタカナに変換
+			0,               // LowerCase では変換しない
+			0x30a1 - 0x3041, // TitleCase でカタカナに変換
+		},
+	},
+	// カタカナをひらがなに変換
+	unicode.CaseRange{
+		Lo: 0x30a1, // ァ
+		Hi: 0x30f3, // ン
+		Delta: [unicode.MaxCase]rune{
+			0,               // UpperCase では変換しない
+			0x3041 - 0x30a1, // LowerCase でひらがなに変換
+			0,               // TitleCase では変換しない
+		},
+	},
+}
+
+// テキストをカタカナへ変換する.
+func toKatakana(str string) string {
+	org := []rune(strings.ToLower(str))
+	dst := make([]rune, len(org))
+	for i, r := range org {
+		if r <= 0x7f {
+			// ASCIIはそのまま
+			dst[i] = r
+		} else {
+			dst[i] = kanaConv.ToUpper(r)
+		}
+	}
+	return string(dst)
 }
